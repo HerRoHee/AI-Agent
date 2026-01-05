@@ -1,114 +1,110 @@
 ﻿using TaskAgent.Tasks.Application.Services;
 using TaskAgent.Tasks.Infrastructure;
-using TaskAgent.Web.Workers;
 using TaskAgent.Tasks.Infrastructure.Seeder;
+using TaskAgent.Web.Workers;
 
-namespace TaskAgent.Web
+var builder = WebApplication.CreateBuilder(args);
+
+// ============================================================================
+// SERVICE REGISTRATION
+// ============================================================================
+
+// Add controllers
+builder.Services.AddControllers();
+
+// Add API documentation
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen(options =>
 {
-    public class Program
+    options.SwaggerDoc("v1", new()
     {
-        public static async void Main(string[] args)
-        {
-            
+        Title = "TaskAgent API",
+        Version = "v1",
+        Description = "Intelligent task management agent with Sense → Think → Act → Learn loop"
+    });
+});
 
-            var builder = WebApplication.CreateBuilder(args);
+// Add Infrastructure layer (EF Core, Repositories)
+var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
+    ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
 
-            // ============================================================================
-            // SERVICE REGISTRATION
-            // ============================================================================
+builder.Services.AddTaskAgentInfrastructure(connectionString);
 
-            // Add controllers
-            builder.Services.AddControllers();
+// Add Application layer services
+builder.Services.AddScoped<TaskQueueService>();
+builder.Services.AddScoped<TaskEvaluationService>();
+builder.Services.AddScoped<RecommendationService>();
+builder.Services.AddScoped<LearningService>(); // Changed to Scoped
 
-            // Add API documentation
-            builder.Services.AddEndpointsApiExplorer();
-            builder.Services.AddSwaggerGen(options =>
-            {
-                options.SwaggerDoc("v1", new()
-                {
-                    Title = "TaskAgent API",
-                    Version = "v1",
-                    Description = "Intelligent task management agent with Sense → Think → Act → Learn loop"
-                });
-            });
+// Add Background Worker (Agent Loop)
+builder.Services.AddHostedService<TaskAgentWorker>();
 
-            // Add Infrastructure layer (EF Core, Repositories)
-            var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
-                ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
+// Add CORS (if needed for frontend)
+builder.Services.AddCors(options =>
+{
+    options.AddDefaultPolicy(policy =>
+    {
+        policy.AllowAnyOrigin()
+              .AllowAnyMethod()
+              .AllowAnyHeader();
+    });
+});
 
-            builder.Services.AddTaskAgentInfrastructure(connectionString);
+// ============================================================================
+// APPLICATION PIPELINE
+// ============================================================================
 
-            // Add Application layer services
-            builder.Services.AddScoped<TaskQueueService>();
-            builder.Services.AddScoped<TaskEvaluationService>();
-            builder.Services.AddScoped<RecommendationService>();
-            builder.Services.AddSingleton<LearningService>(); // Singleton to maintain experience history
+var app = builder.Build();
 
-            // Add Background Worker (Agent Loop)
-            builder.Services.AddHostedService<TaskAgentWorker>();
+// Seed database on startup
+SeedDatabase(app, builder.Environment.IsDevelopment());
 
-            // Add CORS (if needed for frontend)
-            builder.Services.AddCors(options =>
-            {
-                options.AddDefaultPolicy(policy =>
-                {
-                    policy.AllowAnyOrigin()
-                          .AllowAnyMethod()
-                          .AllowAnyHeader();
-                });
-            });
+// Configure HTTP pipeline
+if (app.Environment.IsDevelopment())
+{
+    app.UseSwagger();
+    app.UseSwaggerUI(options =>
+    {
+        options.SwaggerEndpoint("/swagger/v1/swagger.json", "TaskAgent API v1");
+        options.RoutePrefix = string.Empty; // Swagger at root
+    });
+}
 
-            // ============================================================================
-            // APPLICATION PIPELINE
-            // ============================================================================
+app.UseHttpsRedirection();
 
-            var app = builder.Build();
+app.UseCors();
 
-            // Seed database on startup
-            using (var scope = app.Services.CreateScope())
-            {
-                var seeder = scope.ServiceProvider.GetRequiredService<DatabaseSeeder>();
-                var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
+app.UseAuthorization();
 
-                try
-                {
-                    logger.LogInformation("Seeding database...");
-                    await seeder.SeedAsync(includeSampleTasks: builder.Environment.IsDevelopment());
-                    logger.LogInformation("Database seeded successfully");
-                }
-                catch (Exception ex)
-                {
-                    logger.LogError(ex, "Error seeding database");
-                }
-            }
+app.MapControllers();
 
-            // Configure HTTP pipeline
-            if (app.Environment.IsDevelopment())
-            {
-                app.UseSwagger();
-                app.UseSwaggerUI(options =>
-                {
-                    options.SwaggerEndpoint("/swagger/v1/swagger.json", "TaskAgent API v1");
-                    options.RoutePrefix = string.Empty; // Swagger at root
-                });
-            }
+// ============================================================================
+// RUN APPLICATION
+// ============================================================================
 
-            app.UseHttpsRedirection();
+app.Logger.LogInformation("Starting TaskAgent.Web application");
+app.Logger.LogInformation("Agent workers will start automatically");
 
-            app.UseCors();
+app.Run();
 
-            app.UseAuthorization();
+// ============================================================================
+// HELPER METHODS
+// ============================================================================
 
-            app.MapControllers();
+static void SeedDatabase(WebApplication app, bool isDevelopment)
+{
+    using var scope = app.Services.CreateScope();
+    var seeder = scope.ServiceProvider.GetRequiredService<DatabaseSeeder>();
+    var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
 
-            // ============================================================================
-            // RUN APPLICATION
-            // ============================================================================
-
-            app.Logger.LogInformation("Starting TaskAgent.Web application");
-            app.Logger.LogInformation("Agent workers will start automatically");
-
-            app.Run();
-        }
+    try
+    {
+        logger.LogInformation("Seeding database...");
+        seeder.SeedAsync(includeSampleTasks: isDevelopment).GetAwaiter().GetResult();
+        logger.LogInformation("Database seeded successfully");
+    }
+    catch (Exception ex)
+    {
+        logger.LogError(ex, "Error seeding database");
     }
 }
