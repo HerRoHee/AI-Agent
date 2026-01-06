@@ -10,7 +10,6 @@
 
   <ItemGroup>
 	<ProjectReference Include="..\TaskAgent.Core\TaskAgent.Core.csproj" />
-    <Folder Include="ML\" />
   </ItemGroup>
 
 <ItemGroup>

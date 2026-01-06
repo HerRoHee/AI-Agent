@@ -1,0 +1,65 @@
+<div class="task-list">
+  <div class="header">
+    <h2>Task List (Auto-refreshing)</h2>
+
+    <div class="filter">
+      <label for="statusFilter">Filter by Status:</label>
+      <select
+        id="statusFilter"
+        [(ngModel)]="filteredStatus"
+        (change)="onStatusFilterChange()">
+        <option value="">All</option>
+        <option *ngFor="let status of statuses.slice(1)" [value]="status">
+          {{ status }}
+        </option>
+      </select>
+    </div>
+  </div>
+
+  <div *ngIf="isLoading" class="loading">Loading tasks...</div>
+
+  <div *ngIf="!isLoading && tasks.length === 0" class="no-tasks">
+    No tasks found. Create one to see the agent in action!
+  </div>
+
+  <table *ngIf="!isLoading && tasks.length > 0">
+    <thead>
+    <tr>
+      <th>Title</th>
+      <th>Status</th>
+      <th>Priority</th>
+      <th>Due Date</th>
+      <th>Escalations</th>
+      <th>Created</th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr *ngFor="let task of tasks">
+      <td>
+        <strong>{{ task.title }}</strong>
+        <div class="description" *ngIf="task.description">
+          {{ task.description }}
+        </div>
+      </td>
+      <td>
+          <span [class]="getStatusClass(task.status)" class="badge">
+            {{ task.status }}
+          </span>
+      </td>
+      <td>
+          <span [class]="getPriorityClass(task.priority)" class="badge">
+            {{ task.priority }}
+          </span>
+      </td>
+      <td>
+          <span *ngIf="task.dueDate">
+            {{ task.dueDate | date:'short' }}
+          </span>
+        <span *ngIf="!task.dueDate">-</span>
+      </td>
+      <td>{{ task.escalationCount }}</td>
+      <td>{{ task.createdAt | date:'short' }}</td>
+    </tr>
+    </tbody>
+  </table>
+</div>

@@ -1,0 +1,215 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  min-height: 100vh;
+  padding: 20px;
+}
+
+.container {
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+header {
+  text-align: center;
+  color: white;
+  margin-bottom: 30px;
+}
+
+header h1 {
+  font-size: 3em;
+  margin-bottom: 10px;
+}
+
+.subtitle {
+  font-size: 1.2em;
+  opacity: 0.9;
+}
+
+.main-content {
+  display: grid;
+  grid-template-columns: 400px 1fr;
+  gap: 20px;
+  margin-top: 20px;
+}
+
+.left-panel, .right-panel {
+  background: white;
+  border-radius: 10px;
+  padding: 20px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+}
+
+/* System Stats */
+.system-stats {
+  background: white;
+  border-radius: 10px;
+  padding: 20px;
+  margin-bottom: 20px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 15px;
+  margin-top: 20px;
+}
+
+.stat-card {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 20px;
+  border-radius: 8px;
+  text-align: center;
+}
+
+.stat-card.pending { background: linear-gradient(135deg, #FFA726, #FB8C00); }
+.stat-card.active { background: linear-gradient(135deg, #42A5F5, #1E88E5); }
+.stat-card.snoozed { background: linear-gradient(135deg, #AB47BC, #8E24AA); }
+.stat-card.escalated { background: linear-gradient(135deg, #EF5350, #E53935); }
+.stat-card.completed { background: linear-gradient(135deg, #66BB6A, #43A047); }
+.stat-card.overdue { background: linear-gradient(135deg, #FF7043, #F4511E); }
+
+.stat-value {
+  font-size: 2.5em;
+  font-weight: bold;
+}
+
+.stat-label {
+  font-size: 0.9em;
+  opacity: 0.9;
+  margin-top: 5px;
+}
+
+/* Task Form */
+.task-form h2 {
+  margin-bottom: 20px;
+  color: #333;
+}
+
+.form-group {
+  margin-bottom: 15px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 5px;
+  font-weight: bold;
+  color: #555;
+}
+
+.form-group input,
+.form-group textarea,
+.form-group select {
+  width: 100%;
+  padding: 10px;
+  border: 2px solid #ddd;
+  border-radius: 5px;
+  font-size: 1em;
+}
+
+.form-group input:focus,
+.form-group textarea:focus,
+.form-group select:focus {
+  outline: none;
+  border-color: #667eea;
+}
+button {
+  width: 100%;
+  padding: 12px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  border-radius: 5px;
+  font-size: 1.1em;
+  font-weight: bold;
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+button:hover {
+  transform: translateY(-2px);
+}
+button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+.alert {
+  padding: 10px;
+  border-radius: 5px;
+  margin-bottom: 15px;
+}
+.alert-success {
+  background: #d4edda;
+  color: #155724;
+  border: 1px solid #c3e6cb;
+}
+.alert-error {
+  background: #f8d7da;
+  color: #721c24;
+  border: 1px solid #f5c6cb;
+}
+/* Task List */
+.task-list h2 {
+  margin-bottom: 20px;
+  color: #333;
+}
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+.filter select {
+  padding: 8px;
+  border: 2px solid #ddd;
+  border-radius: 5px;
+  margin-left: 10px;
+}
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+thead {
+  background: #f8f9fa;
+}
+th, td {
+  padding: 12px;
+  text-align: left;
+  border-bottom: 1px solid #dee2e6;
+}
+th {
+  font-weight: bold;
+  color: #495057;
+}
+.badge {
+  padding: 5px 10px;
+  border-radius: 20px;
+  font-size: 0.85em;
+  font-weight: bold;
+}
+.status-pending { background: #FFA726; color: white; }
+.status-active { background: #42A5F5; color: white; }
+.status-snoozed { background: #AB47BC; color: white; }
+.status-escalated { background: #EF5350; color: white; }
+.status-completed { background: #66BB6A; color: white; }
+.priority-low { background: #90CAF9; color: #1565C0; }
+.priority-medium { background: #FFF59D; color: #F57F17; }
+.priority-high { background: #FFAB91; color: #BF360C; }
+.priority-critical { background: #EF5350; color: white; }
+.description {
+  font-size: 0.9em;
+  color: #666;
+  margin-top: 5px;
+}
+.loading, .no-tasks {
+  text-align: center;
+  padding: 40px;
+  color: #666;
+}
