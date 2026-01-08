@@ -34,7 +34,8 @@ builder.Services.AddTaskAgentInfrastructure(connectionString);
 builder.Services.AddScoped<TaskQueueService>();
 builder.Services.AddScoped<TaskEvaluationService>();
 builder.Services.AddScoped<RecommendationService>();
-builder.Services.AddScoped<LearningService>(); // Changed to Scoped
+builder.Services.AddScoped<LearningService>();
+builder.Services.AddScoped<UserActionService>();
 
 // Add Background Worker (Agent Loop)
 builder.Services.AddHostedService<TaskAgentWorker>();

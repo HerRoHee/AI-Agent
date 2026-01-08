@@ -1,5 +1,5 @@
-<div class="system-stats" *ngIf="stats">
-  <h2>🤖 Agent System Stats (Live)</h2>
+<div class="system-stats" *ngIf="stats$ | async as stats">
+  <h2>🤖 Agent System Stats</h2>
 
   <div class="stats-grid">
     <div class="stat-card">
@@ -32,8 +32,13 @@
       <div class="stat-label">Completed</div>
     </div>
 
+    <div class="stat-card rejected">
+      <div class="stat-value">{{ stats.rejectedTasks }}</div>
+      <div class="stat-label">Rejected</div>
+    </div>
+
     <div class="stat-card overdue">
-      <div class="stat-value">{{ stats.overdueTasksCount }}</div>
+      <div class="stat-value">{{ stats.overdueTasks }}</div>
       <div class="stat-label">Overdue</div>
     </div>
   </div>

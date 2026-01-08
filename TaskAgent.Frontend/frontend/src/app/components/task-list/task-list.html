@@ -1,28 +1,42 @@
 <div class="task-list">
   <div class="header">
-    <h2>Task List (Auto-refreshing)</h2>
+    <h2>
+      Task List
+      <span class="live-badge">● LIVE</span>
+    </h2>
 
-    <div class="filter">
-      <label for="statusFilter">Filter by Status:</label>
-      <select
-        id="statusFilter"
-        [(ngModel)]="filteredStatus"
-        (change)="onStatusFilterChange()">
-        <option value="">All</option>
-        <option *ngFor="let status of statuses.slice(1)" [value]="status">
-          {{ status }}
-        </option>
-      </select>
+    <div class="controls">
+      <div class="filter">
+        <label for="statusFilter">Filter:</label>
+        <select
+          id="statusFilter"
+          [(ngModel)]="filteredStatus"
+          (change)="onStatusFilterChange()">
+          <option value="">All</option>
+          <option *ngFor="let status of statuses.slice(1)" [value]="status">
+            {{ status }}
+          </option>
+        </select>
+      </div>
+
+      <button class="refresh-btn" (click)="onManualRefresh()">
+        🔄 Refresh
+      </button>
     </div>
   </div>
 
-  <div *ngIf="isLoading" class="loading">Loading tasks...</div>
-
-  <div *ngIf="!isLoading && tasks.length === 0" class="no-tasks">
-    No tasks found. Create one to see the agent in action!
+  <!-- Use async pipe to subscribe to observables -->
+  <div *ngIf="loading$ | async" class="loading">
+    <div class="spinner"></div>
+    Loading tasks...
   </div>
 
-  <table *ngIf="!isLoading && tasks.length > 0">
+  <div *ngIf="(loading$ | async) === false && (tasks$ | async)?.length === 0" class="no-tasks">
+    📭 No tasks found. Create one to see the agent in action!
+  </div>
+
+  <!-- Async pipe automatically subscribes and unsubscribes -->
+  <table *ngIf="(tasks$ | async) as tasks">
     <thead>
     <tr>
       <th>Title</th>
@@ -31,6 +45,7 @@
       <th>Due Date</th>
       <th>Escalations</th>
       <th>Created</th>
+      <th>Actions</th>
     </tr>
     </thead>
     <tbody>
@@ -59,6 +74,36 @@
       </td>
       <td>{{ task.escalationCount }}</td>
       <td>{{ task.createdAt | date:'short' }}</td>
+
+      <!-- Action buttons (only for non-terminal tasks) -->
+      <td>
+        <div class="action-buttons" *ngIf="task.status !== 'Completed' && task.status !== 'Rejected'">
+          <button
+            class="btn-complete"
+            (click)="onCompleteTask(task.id)"
+            title="Complete this task">
+            ✓ Complete
+          </button>
+
+          <button
+            class="btn-snooze"
+            (click)="onSnoozeTask(task.id)"
+            title="Snooze this task">
+            ⏰ Snooze
+          </button>
+
+          <button
+            class="btn-reject"
+            (click)="onRejectTask(task.id)"
+            title="Reject this task">
+            ✕ Reject
+          </button>
+        </div>
+
+        <div *ngIf="task.status === 'Completed' || task.status === 'Rejected'">
+          <span class="terminal-badge">Terminal</span>
+        </div>
+      </td>
     </tr>
     </tbody>
   </table>

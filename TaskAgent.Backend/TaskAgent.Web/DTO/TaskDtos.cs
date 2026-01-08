@@ -69,5 +69,18 @@ public sealed record SystemStatsResponse
     public required int SnoozedTasks { get; init; }
     public required int EscalatedTasks { get; init; }
     public required int CompletedTasks { get; init; }
+    public required int RejectedTasks { get; init; }
     public required int OverdueTasks { get; init; }
 }
+
+/// <summary>
+/// Request DTO for snoozing a task.
+/// </summary>
+public sealed record SnoozeTaskRequest
+{
+    /// <summary>
+    /// How many hours to snooze (optional, defaults to 4 hours).
+    /// </summary>
+    public double? SnoozeDurationHours { get; init; }
+}
+

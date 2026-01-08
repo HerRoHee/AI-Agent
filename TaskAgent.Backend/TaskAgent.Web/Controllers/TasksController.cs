@@ -2,6 +2,7 @@
 using TaskAgent.Tasks.Application.Interfaces;
 using TaskAgent.Tasks.Application.Services;
 using TaskAgent.Tasks.Domain.Enums;
+using TaskAgent.Tasks.Domain.Exceptions;
 using TaskAgent.Web.DTO;
 using TaskAgent.Web.Mapping;
 using TaskStatus = TaskAgent.Tasks.Domain.Enums.TaskStatus;
@@ -18,13 +19,16 @@ public sealed class TasksController : ControllerBase
 {
     private readonly TaskQueueService _queueService;
     private readonly ITaskRepository _taskRepository;
+    private readonly UserActionService _userActionService;
 
     public TasksController(
         TaskQueueService queueService,
-        ITaskRepository taskRepository)
+        ITaskRepository taskRepository,
+        UserActionService userActionService)
     {
         _queueService = queueService ?? throw new ArgumentNullException(nameof(queueService));
         _taskRepository = taskRepository ?? throw new ArgumentNullException(nameof(taskRepository));
+        _userActionService = userActionService ?? throw new ArgumentNullException(nameof(userActionService));
     }
 
     /// <summary>
@@ -130,9 +134,101 @@ public sealed class TasksController : ControllerBase
             SnoozedTasks = await _taskRepository.CountByStatusAsync(TaskStatus.Snoozed, cancellationToken),
             EscalatedTasks = await _taskRepository.CountByStatusAsync(TaskStatus.Escalated, cancellationToken),
             CompletedTasks = await _taskRepository.CountByStatusAsync(TaskStatus.Completed, cancellationToken),
+            RejectedTasks = await _taskRepository.CountByStatusAsync(TaskStatus.Rejected, cancellationToken), // ← Add
             OverdueTasks = overdueTasks.Count
         };
 
         return Ok(stats);
+    }
+
+    /// <summary>
+    /// Handles user intent to complete a task.
+    /// This is a command, not a query.
+    /// </summary>
+    [HttpPost("{id:guid}/complete")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> CompleteTask(Guid id, CancellationToken cancellationToken)
+    {
+        try
+        {
+            var success = await _userActionService.RequestCompleteTaskAsync(id, cancellationToken);
+
+            if (!success)
+                return NotFound(new { error = $"Task {id} not found." });
+
+            return Ok(new { message = "Task completed successfully." });
+        }
+        catch (TaskAlreadyCompletedException ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
+        catch (InvalidStateTransitionException ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
+    }
+
+    /// <summary>
+    /// Handles user intent to snooze a task.
+    /// This is a command, not a query.
+    /// </summary>
+    [HttpPost("{id:guid}/snooze")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> SnoozeTask(
+        Guid id,
+        [FromBody] SnoozeTaskRequest? request,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            var snoozeDuration = request?.SnoozeDurationHours.HasValue == true
+                ? TimeSpan.FromHours(request.SnoozeDurationHours.Value)
+                : (TimeSpan?)null;
+
+            var success = await _userActionService.RequestSnoozeTaskAsync(id, snoozeDuration, cancellationToken);
+
+            if (!success)
+                return NotFound(new { error = $"Task {id} not found." });
+
+            return Ok(new { message = "Task snoozed successfully." });
+        }
+        catch (InvalidStateTransitionException ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
+    }
+
+    /// <summary>
+    /// Handles user intent to reject a task.
+    /// This is a command, not a query.
+    /// Rejected tasks become terminal and are excluded from agent processing.
+    /// </summary>
+    [HttpPost("{id:guid}/reject")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> RejectTask(Guid id, CancellationToken cancellationToken)
+    {
+        try
+        {
+            var success = await _userActionService.RequestRejectTaskAsync(id, cancellationToken);
+
+            if (!success)
+                return NotFound(new { error = $"Task {id} not found." });
+
+            return Ok(new { message = "Task rejected successfully." });
+        }
+        catch (InvalidStateTransitionException ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
     }
 }

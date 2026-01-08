@@ -294,26 +294,101 @@ public sealed class TaskItem
             (TaskStatus.Pending, TaskStatus.Snoozed) => true,
             (TaskStatus.Pending, TaskStatus.Escalated) => true,
             (TaskStatus.Pending, TaskStatus.Completed) => true,
+            (TaskStatus.Pending, TaskStatus.Rejected) => true,
 
             // From Active
             (TaskStatus.Active, TaskStatus.Pending) => true,
             (TaskStatus.Active, TaskStatus.Snoozed) => true,
             (TaskStatus.Active, TaskStatus.Escalated) => true,
             (TaskStatus.Active, TaskStatus.Completed) => true,
+            (TaskStatus.Active, TaskStatus.Rejected) => true,
 
             // From Snoozed
             (TaskStatus.Snoozed, TaskStatus.Pending) => true,
             (TaskStatus.Snoozed, TaskStatus.Active) => true,
             (TaskStatus.Snoozed, TaskStatus.Escalated) => true,
             (TaskStatus.Snoozed, TaskStatus.Completed) => true,
+            (TaskStatus.Snoozed, TaskStatus.Rejected) => true,
 
             // From Escalated
             (TaskStatus.Escalated, TaskStatus.Pending) => true,
             (TaskStatus.Escalated, TaskStatus.Active) => true,
             (TaskStatus.Escalated, TaskStatus.Completed) => true,
+            (TaskStatus.Escalated, TaskStatus.Rejected) => true,
 
             // All other transitions are invalid
             _ => false
         };
+    }
+
+    /// <summary>
+    /// Marks the task as completed by user request.
+    /// This is a user-initiated action, not agent-initiated.
+    /// Valid from: Active, Pending, Snoozed, Escalated
+    /// </summary>
+    /// <exception cref="InvalidStateTransitionException">Thrown when transition is invalid.</exception>
+    public void CompleteByUser()
+    {
+        if (Status == TaskStatus.Completed)
+            throw new TaskAlreadyCompletedException(Id);
+
+        if (Status == TaskStatus.Rejected)
+            throw new InvalidStateTransitionException(Status.ToString(), TaskStatus.Completed.ToString());
+
+        _status = TaskStatus.Completed;
+        CompletedAt = DateTimeOffset.UtcNow;
+        UpdatedAt = DateTimeOffset.UtcNow;
+        SnoozedUntil = null;
+    }
+
+    /// <summary>
+    /// Snoozes the task by user request until the specified time.
+    /// This is a user-initiated action, not agent-initiated.
+    /// Valid from: Pending, Active, Escalated
+    /// </summary>
+    /// <param name="until">The time until which the task should be snoozed.</param>
+    /// <exception cref="InvalidStateTransitionException">Thrown when transition is invalid.</exception>
+    /// <exception cref="ArgumentException">Thrown when snooze time is invalid.</exception>
+    public void SnoozeByUser(DateTimeOffset until)
+    {
+        EnsureNotCompleted();
+
+        if (Status == TaskStatus.Rejected)
+            throw new InvalidStateTransitionException(Status.ToString(), TaskStatus.Snoozed.ToString());
+
+        if (until <= DateTimeOffset.UtcNow)
+            throw new ArgumentException("Snooze time must be in the future.", nameof(until));
+
+        _status = TaskStatus.Snoozed;
+        SnoozedUntil = until;
+        UpdatedAt = DateTimeOffset.UtcNow;
+    }
+
+    /// <summary>
+    /// Marks the task as rejected by user.
+    /// This is a user-only terminal state - agent will never process rejected tasks.
+    /// Valid from: any non-terminal state
+    /// </summary>
+    /// <exception cref="InvalidStateTransitionException">Thrown when already in terminal state.</exception>
+    public void RejectByUser()
+    {
+        if (Status == TaskStatus.Completed)
+            throw new TaskAlreadyCompletedException(Id);
+
+        if (Status == TaskStatus.Rejected)
+            throw new InvalidStateTransitionException(Status.ToString(), TaskStatus.Rejected.ToString());
+
+        _status = TaskStatus.Rejected;
+        UpdatedAt = DateTimeOffset.UtcNow;
+        SnoozedUntil = null;
+    }
+
+    /// <summary>
+    /// Checks if the task is in a terminal state (completed or rejected).
+    /// Terminal tasks should not be processed by the agent.
+    /// </summary>
+    public bool IsTerminal()
+    {
+        return Status == TaskStatus.Completed || Status == TaskStatus.Rejected;
     }
 }

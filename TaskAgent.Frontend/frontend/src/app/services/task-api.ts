@@ -29,4 +29,35 @@ export class TaskApiService {
   getStats(): Observable<SystemStats> {
     return this.http.get<SystemStats>(`${this.apiUrl}/tasks/stats`);
   }
+
+  /**
+   * User action: Complete a task
+   */
+  completeTask(id: string): Observable<{message: string}> {
+    return this.http.post<{message: string}>(
+      `${this.apiUrl}/tasks/${id}/complete`,
+      {}
+    );
+  }
+
+  /**
+   * User action: Snooze a task
+   */
+  snoozeTask(id: string, hours?: number): Observable<{message: string}> {
+    const body = hours ? { snoozeDurationHours: hours } : {};
+    return this.http.post<{message: string}>(
+      `${this.apiUrl}/tasks/${id}/snooze`,
+      body
+    );
+  }
+
+  /**
+   * User action: Reject a task
+   */
+  rejectTask(id: string): Observable<{message: string}> {
+    return this.http.post<{message: string}>(
+      `${this.apiUrl}/tasks/${id}/reject`,
+      {}
+    );
+  }
 }

@@ -34,5 +34,11 @@ public enum TaskStatus
     /// <summary>
     /// Task has been finished and is in a terminal state.
     /// </summary>
-    Completed = 4
+    Completed = 4,
+
+    /// <summary>
+    /// Task has been rejected by user and will not be processed.
+    /// USER-ONLY terminal state.
+    /// </summary>
+    Rejected = 5
 }

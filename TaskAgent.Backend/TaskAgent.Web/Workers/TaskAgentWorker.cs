@@ -11,9 +11,9 @@ public sealed class TaskAgentWorker : BackgroundService
 {
     private readonly IServiceProvider _serviceProvider;
     private readonly ILogger<TaskAgentWorker> _logger;
-    private readonly TimeSpan _scoringInterval = TimeSpan.FromSeconds(5);
+    private readonly TimeSpan _scoringInterval = TimeSpan.FromSeconds(10);
     private readonly TimeSpan _adaptationInterval = TimeSpan.FromMinutes(5);
-    private readonly TimeSpan _noWorkDelay = TimeSpan.FromSeconds(10);
+    private readonly TimeSpan _noWorkDelay = TimeSpan.FromSeconds(20);
 
     public TaskAgentWorker(
         IServiceProvider serviceProvider,

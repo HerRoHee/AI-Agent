@@ -30,16 +30,18 @@ public sealed class TaskEvaluationService
 
     /// <summary>
     /// Gathers perception data for task evaluation.
+    /// FILTERS OUT terminal tasks (Completed, Rejected).
     /// </summary>
-    /// <param name="cancellationToken">Cancellation token.</param>
-    /// <returns>Task perception data, or null if no tasks to evaluate.</returns>
     public async Task<TaskPercept?> GatherPerceptionAsync(CancellationToken cancellationToken = default)
     {
         var settings = await _settingsRepository.EnsureExistsAsync(cancellationToken);
         var tasks = await _taskRepository.GetAllAsync(cancellationToken: cancellationToken);
 
-        // Filter out completed tasks for evaluation
-        var activeTasks = tasks.Where(t => t.Status != TaskStatus.Completed).ToList();
+        // Filter out TERMINAL tasks (Completed + Rejected)
+        // Agent should NEVER process these
+        var activeTasks = tasks
+            .Where(t => !t.IsTerminal()) // ← Key change
+            .ToList();
 
         if (activeTasks.Count == 0)
             return null;
